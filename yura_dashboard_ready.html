@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YURA Dashboard</title>
+  <style>
+    :root{
+      --border: rgba(255,255,255,.24);
+      --panel2: rgba(255,255,255,.18);
+      --text: #f8fafc;
+      --muted: rgba(255,255,255,.78);
+      --blue: #3b82f6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      font-family: Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      color: var(--text);
+      overflow:hidden;
+      background:#020617;
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background:
+        linear-gradient(rgba(2,6,23,.62), rgba(2,6,23,.7)),
+        url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2070') center/cover no-repeat;
+      z-index:-2;
+    }
+    body::after{
+      content:"";
+      position:fixed; inset:0;
+      backdrop-filter: blur(6px);
+      background: rgba(2,6,23,.18);
+      z-index:-1;
+    }
+    .shell{
+      max-width:1400px;height:94vh;margin:3vh auto;padding:14px;border-radius:38px;
+      border:1px solid var(--border);background:rgba(255,255,255,.10);
+      backdrop-filter:blur(18px);box-shadow:0 20px 80px rgba(0,0,0,.35);
+      display:flex;flex-direction:column;gap:10px;
+    }
+    .top{text-align:center;padding-top:2px}
+    .yura{font-size:28px;font-weight:800;letter-spacing:.35em;text-shadow:0 6px 20px rgba(0,0,0,.35);margin-bottom:2px}
+    .grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .panel{
+      min-height:0;border:1px solid var(--border);background:var(--panel2);backdrop-filter:blur(14px);
+      border-radius:28px;padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.18);overflow:hidden;
+    }
+    .left-col{display:flex;flex-direction:column;gap:10px}
+    .mini-calendar,.month-calendar,.art-card{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.10);border-radius:20px;padding:10px}
+    .title-sm{text-align:center;font-size:13px;font-weight:700;margin-bottom:8px}
+    .legend{text-align:center;font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+    .calendar-grid-12{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .month-box{padding:4px}
+    .month-name{text-align:center;font-size:10px;font-weight:700;margin-bottom:2px}
+    .week-row,.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+    .week-row div{text-align:center;font-size:6px;color:rgba(255,255,255,.72)}
+    .weekend-label{color:#fca5a5!important}
+    .day{
+      position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+      font-size:6px;border-radius:4px;color:#fff;
+    }
+    .day.weekend{color:#fca5a5}
+    .day.national{color:#f87171;font-weight:700}
+    .day.annual{color:#60a5fa;font-weight:700}
+    .day.company{color:#fde047;font-weight:700}
+    .dot{position:absolute;bottom:0;width:2px;height:2px;border-radius:999px}
+    .dot.blue{background:#60a5fa}.dot.yellow{background:#fde047}
+    .links-title{text-align:center;font-size:16px;font-weight:700;margin-top:2px}
+    .links{display:flex;flex-direction:column;gap:8px}
+    .link-btn{
+      text-decoration:none;text-align:center;border-radius:14px;padding:10px 8px;font-size:12px;
+      font-weight:700;background:rgba(255,255,255,.85);color:#1e293b;
+    }
+    .link-btn.primary{background:var(--blue);color:#fff}
+    .section-head{margin-bottom:10px}
+    .section-head h2,.game-head h3{margin:0;font-size:24px}
+    .section-head p,.game-head p{margin:4px 0 0 0;font-size:12px;color:var(--muted)}
+    .field-label{display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,.88);margin-bottom:6px}
+    .input,.action-btn{width:100%;height:44px;border:none;border-radius:16px;font-size:14px}
+    .input{background:rgba(255,255,255,.9);padding:0 14px;color:#0f172a;outline:none;border:1px solid rgba(255,255,255,.32)}
+    .action-btn{margin-top:10px;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer}
+    .month-cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .nav-btn{width:32px;height:32px;border:none;border-radius:12px;background:rgba(255,255,255,.88);color:#1e293b;cursor:pointer;font-weight:700}
+    .month-title{font-size:15px;font-weight:700;text-align:center}
+    .month-calendar .week-row div{font-size:10px;font-weight:700}
+    .month-calendar .days-grid{gap:4px}
+    .month-calendar .day{font-size:11px;border-radius:10px;background:rgba(255,255,255,.05)}
+    .month-calendar .day.company{background:rgba(250,204,21,.18)}
+    .month-calendar .day.annual{background:rgba(59,130,246,.18)}
+    .month-calendar .day.national{background:rgba(239,68,68,.16)}
+    .bg-slate-700{background:#334155!important;color:#fff!important}
+    .bg-emerald-500{background:#10b981!important;color:#fff!important}
+    .bg-orange-500{background:#f97316!important;color:#fff!important}
+    .bg-rose-500{background:#f43f5e!important;color:#fff!important}
+    .schedule-list{margin-top:10px;min-height:220px;max-height:340px;overflow:auto;padding-right:4px}
+    .schedule-list::-webkit-scrollbar{width:6px}
+    .schedule-list::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:999px}
+    .placeholder,.error-box{
+      min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:20px;
+      border:1px dashed rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.72);font-size:13px;padding:10px;
+    }
+    .error-box{min-height:auto;background:rgba(255,241,242,.95);color:#e11d48;border:none;padding:20px;font-weight:700}
+    .item{
+      display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.25);
+      color:#1e293b;border-radius:18px;padding:10px 12px;margin-bottom:8px;
+    }
+    .badge{display:inline-flex;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:#fff;margin-bottom:4px}
+    .item-name{font-size:13px;font-weight:700;color:#475569;line-height:1.35}
+    .item-date{font-size:12px;font-weight:700;color:#334155;white-space:nowrap}
+    .game-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px}
+    .score-pill{background:rgba(255,255,255,.18);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;white-space:nowrap}
+    .game-box{display:flex;flex-direction:column;align-items:center;gap:10px}
+    canvas{width:100%;max-width:280px;border-radius:20px;border:1px solid rgba(255,255,255,.2);background:#111827;box-shadow:inset 0 4px 18px rgba(0,0,0,.25)}
+    .controls{width:100%;max-width:280px;display:flex;gap:8px}
+    .controls button{height:46px;border:none;border-radius:16px;font-weight:700;cursor:pointer}
+    .controls .small{flex:1;background:rgba(255,255,255,.88);color:#1e293b;font-size:20px}
+    .controls .restart{flex:1.3;background:rgba(244,114,182,.92);color:#fff;font-size:13px}
+    .art-card svg{width:100%;display:block}
+    .footer-tags{display:flex;flex-wrap:wrap;gap:6px;font-size:10px;color:rgba(255,255,255,.82)}
+    .footer-tags span{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.12)}
+    @media (max-width:1100px){
+      body{overflow:auto}.shell{height:auto;min-height:94vh}.grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="top"><div id="yuraTitle" class="yura">YURA</div></div>
+    <div class="grid">
+      <div class="panel left-col">
+        <div id="calendarMini" class="mini-calendar"></div>
+        <div class="links-title">바로가기</div>
+        <div class="links">
+          <a class="link-btn primary" target="_blank" rel="noreferrer" href="https://www.yuracorp.co.kr/index.jsp?n_media=27758&n_query=%EC%9C%A0%EB%9D%BC%EC%BD%94%ED%8D%BC%EB%A0%88%EC%9D%B4%EC%85%98&n_rank=1">유라코퍼레이션 홈페이지</a>
+          <a class="link-btn" target="_blank" rel="noreferrer" href="http://intra.yura.co.kr">인트라</a>
+          <a class="link-btn" target="_blank" rel="noreferrer" href="http://alm.yura.co.kr">ALM</a>
+          <a class="link-btn" target="_blank" rel="noreferrer" href="http://jira.yura.co.kr">JIRA</a>
+          <a class="link-btn" target="_blank" rel="noreferrer" href="http://confluence.yura.co.kr">Confluence</a>
+          <a class="link-btn" target="_blank" rel="noreferrer" href="http://plm.yura.co.kr">PLM</a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-head">
+          <h2>개발 일정 검토</h2>
+          <p>SOP 일정을 입력하면 주요 마일스톤 일정을 계산합니다.</p>
+        </div>
+        <label class="field-label" for="sopDate">SOP 일정을 입력하세요</label>
+        <input id="sopDate" class="input" type="date" />
+        <button id="calcBtn" class="action-btn">일정 확인</button>
+
+        <div class="month-calendar" style="margin-top:10px;">
+          <div class="title-sm" style="margin-bottom:10px;">개발 일정 달력</div>
+          <div id="monthCalendar"></div>
+        </div>
+
+        <div id="scheduleList" class="schedule-list">
+          <div class="placeholder">SOP 날짜를 선택하고 버튼을 눌러주세요.</div>
+        </div>
+      </div>
+
+      <div class="panel" style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div class="game-head">
+            <div>
+              <h3>자동차 피하기</h3>
+              <p>좌우 방향키 또는 아래 버튼으로 이동해요.</p>
+            </div>
+            <div id="scorePill" class="score-pill">점수 0</div>
+          </div>
+
+          <div class="game-box">
+            <canvas id="gameCanvas" width="320" height="420"></canvas>
+            <div class="controls">
+              <button id="leftBtn" class="small">◀</button>
+              <button id="restartBtn" class="restart">새로 시작</button>
+              <button id="rightBtn" class="small">▶</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="art-card">
+          <svg viewBox="0 0 320 180">
+            <defs>
+              <linearGradient id="metal" x1="0" x2="1">
+                <stop offset="0%" stop-color="#cbd5f5" />
+                <stop offset="100%" stop-color="#64748b" />
+              </linearGradient>
+            </defs>
+            <rect x="20" y="120" width="280" height="14" rx="7" fill="#334155" opacity="0.7" />
+            <rect x="180" y="80" width="90" height="32" rx="10" fill="#2563eb" />
+            <rect x="195" y="70" width="55" height="20" rx="6" fill="#60a5fa" />
+            <circle cx="200" cy="120" r="9" fill="#0f172a" />
+            <circle cx="245" cy="120" r="9" fill="#0f172a" />
+            <rect x="60" y="40" width="40" height="30" rx="8" fill="url(#metal)" />
+            <circle cx="72" cy="55" r="3" fill="#0ea5e9" />
+            <circle cx="88" cy="55" r="3" fill="#0ea5e9" />
+            <rect x="55" y="70" width="50" height="45" rx="10" fill="#475569" />
+            <rect x="105" y="80" width="35" height="8" rx="4" fill="url(#metal)" />
+            <rect x="140" y="78" width="25" height="6" rx="3" fill="#94a3b8" />
+            <rect x="165" y="70" width="6" height="22" rx="2" fill="#facc15" />
+            <line x1="60" y1="85" x2="100" y2="85" stroke="#94a3b8" stroke-width="2" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-tags">
+      <span>Canvas 기반 미니게임</span>
+      <span>주말 빨간색 표시</span>
+      <span>연차 일정 파란색 표시</span>
+      <span>단일 HTML 파일 구성</span>
+    </div>
+  </div>
+
+  <script>
+    const nationalHolidays = new Set([
+      "2026-01-01","2026-03-01","2026-05-05","2026-06-06","2026-08-15",
+      "2026-10-03","2026-10-09","2026-02-16","2026-02-17","2026-02-18",
+      "2026-10-05","2026-10-06","2026-10-07","2026-12-25"
+    ]);
+    const companyHolidays = new Set([
+      "2026-01-02","2026-05-07","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07"
+    ]);
+    const annualLeaveHolidays = new Set([
+      "2026-02-19","2026-02-20","2026-05-04","2026-09-28","2026-12-31"
+    ]);
+
+    const yuraStyles = [
+      "serif|800|0.35em|normal",
+      "monospace|700|0.4em|normal",
+      "Arial, sans-serif|900|0.3em|italic",
+      "serif|900|0.28em|italic",
+      "monospace|800|0.36em|italic",
+      "Arial, sans-serif|900|0.42em|normal"
+    ];
+
+    const scorePill = document.getElementById("scorePill");
+    const restartBtn = document.getElementById("restartBtn");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+    const calcBtn = document.getElementById("calcBtn");
+    const sopDateInput = document.getElementById("sopDate");
+    const scheduleList = document.getElementById("scheduleList");
+    const yuraTitle = document.getElementById("yuraTitle");
+
+    let scheduleResults = [];
+    let scheduleHighlightMap = {};
+    let monthCursor = 0;
+
+    function randomizeYuraStyle(){
+      const pick = yuraStyles[Math.floor(Math.random()*yuraStyles.length)].split("|");
+      yuraTitle.style.fontFamily = pick[0];
+      yuraTitle.style.fontWeight = pick[1];
+      yuraTitle.style.letterSpacing = pick[2];
+      yuraTitle.style.fontStyle = pick[3];
+    }
+    randomizeYuraStyle();
+
+    function monthData(year, monthIndex){
+      const month = monthIndex + 1;
+      const firstDay = new Date(year, monthIndex, 1).getDay();
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      const cells = [];
+      for(let i=0;i<firstDay;i++) cells.push(null);
+      for(let d=1; d<=daysInMonth; d++) cells.push(d);
+      while(cells.length % 7 !== 0) cells.push(null);
+      return { month, cells };
+    }
+
+    function renderMiniCalendar(){
+      const root = document.getElementById("calendarMini");
+      const weekdays = ["일","월","화","수","목","금","토"];
+      let html = `
+        <div class="title-sm">유라 달력</div>
+        <div class="legend">
+          * <span style="color:#f87171">빨간색</span> : 휴무일 /
+          <span style="color:#60a5fa">파란색</span> : 연차대체 휴무일 /
+          <span style="color:#fde047">노란색</span> : 회사 휴무일
+        </div>
+        <div class="legend" style="font-size:9px;">개발 일정 검토 후 계산된 날짜는 단계별 색상으로 달력에 함께 표시됩니다.</div>
+        <div class="calendar-grid-12">
+      `;
+      for(let m=0;m<12;m++){
+        const {month, cells} = monthData(2026, m);
+        html += `<div class="month-box"><div class="month-name">${month}</div><div class="week-row">`;
+        weekdays.forEach((d, i)=> html += `<div class="${i===0||i===6?'weekend-label':''}">${d}</div>`);
+        html += `</div><div class="days-grid">`;
+        cells.forEach((day, idx)=>{
+          if(!day){ html += `<div></div>`; return; }
+          const dateKey = `2026-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          const weekday = idx % 7;
+          const isWeekend = weekday === 0 || weekday === 6;
+          const isNational = nationalHolidays.has(dateKey);
+          const isCompany = companyHolidays.has(dateKey);
+          const isAnnual = annualLeaveHolidays.has(dateKey);
+          const scheduleItem = scheduleHighlightMap[dateKey];
+          let cls = "day";
+          let extra = "";
+          if(scheduleItem){
+            cls += " " + scheduleItem.className;
+          } else if(isCompany){
+            cls += " company";
+            extra = '<span class="dot yellow"></span>';
+          } else if(isAnnual){
+            cls += " annual";
+            extra = '<span class="dot blue"></span>';
+          } else if(isNational){
+            cls += " national";
+          } else if(isWeekend){
+            cls += " weekend";
+          }
+          html += `<div class="${cls}" title="${scheduleItem ? scheduleItem.label : dateKey}">${day}${extra}</div>`;
+        });
+        html += `</div></div>`;
+      }
+      html += `</div>`;
+      root.innerHTML = html;
+    }
+
+    function renderMonthlyCalendar(){
+      const root = document.getElementById("monthCalendar");
+      const weekdays = ["일","월","화","수","목","금","토"];
+      const {month, cells} = monthData(2026, monthCursor);
+      let html = `
+        <div class="month-cal-head">
+          <button class="nav-btn" id="prevMonthBtn">◀</button>
+          <div class="month-title">2026년 ${month}월</div>
+          <button class="nav-btn" id="nextMonthBtn">▶</button>
+        </div>
+        <div class="week-row">
+      `;
+      weekdays.forEach((d, i)=> html += `<div class="${i===0||i===6?'weekend-label':''}">${d}</div>`);
+      html += `</div><div class="days-grid">`;
+      cells.forEach((day, idx)=>{
+        if(!day){ html += `<div class="day" style="background:transparent;"></div>`; return; }
+        const dateKey = `2026-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const weekday = idx % 7;
+        const isWeekend = weekday === 0 || weekday === 6;
+        const isNational = nationalHolidays.has(dateKey);
+        const isCompany = companyHolidays.has(dateKey);
+        const isAnnual = annualLeaveHolidays.has(dateKey);
+        const scheduleItem = scheduleHighlightMap[dateKey];
+        let cls = "day";
+        if(scheduleItem){
+          cls += " " + scheduleItem.className;
+        } else if(isCompany){
+          cls += " company";
+        } else if(isAnnual){
+          cls += " annual";
+        } else if(isNational){
+          cls += " national";
+        } else if(isWeekend){
+          cls += " weekend";
+        }
+        html += `<div class="${cls}" title="${scheduleItem ? scheduleItem.label : dateKey}">${day}</div>`;
+      });
+      html += `</div>`;
+      root.innerHTML = html;
+      document.getElementById("prevMonthBtn").onclick = () => {
+        monthCursor = (monthCursor + 11) % 12;
+        renderMonthlyCalendar();
+      };
+      document.getElementById("nextMonthBtn").onclick = () => {
+        monthCursor = (monthCursor + 1) % 12;
+        renderMonthlyCalendar();
+      };
+    }
+
+    function formatDate(date){
+      const y = date.getFullYear();
+      const m = String(date.getMonth()+1).padStart(2,'0');
+      const d = String(date.getDate()).padStart(2,'0');
+      const week = ['일','월','화','수','목','금','토'][date.getDay()];
+      return `${y}-${m}-${d} (${week})`;
+    }
+
+    function offsetDate(baseDate, days){
+      const dt = new Date(baseDate);
+      dt.setDate(dt.getDate() - days);
+      return dt;
+    }
+
+    function renderScheduleList(){
+      if(!scheduleResults.length){
+        scheduleList.innerHTML = `<div class="placeholder">SOP 날짜를 선택하고 버튼을 눌러주세요.</div>`;
+        return;
+      }
+      let html = "";
+      scheduleResults.forEach(item=>{
+        html += `
+          <div class="item">
+            <div style="min-width:0; flex:1;">
+              <div class="badge ${item.colorClass}">${item.dDayLabel}</div>
+              <div class="item-name">${item.name}</div>
+            </div>
+            <div class="item-date">${item.dateStr}</div>
+          </div>
+        `;
+      });
+      scheduleList.innerHTML = html;
+    }
+
+    calcBtn.addEventListener("click", () => {
+      const value = sopDateInput.value;
+      randomizeYuraStyle();
+      if(!value){
+        scheduleResults = [];
+        scheduleHighlightMap = {};
+        scheduleList.innerHTML = `<div class="error-box">⚠️ SOP 날짜를 선택해 주세요.</div>`;
+        renderMiniCalendar();
+        renderMonthlyCalendar();
+        return;
+      }
+
+      const base = new Date(value);
+      const milestones = [
+        { name: "SOP (양산 개시)", offset: 0, colorClass: "bg-slate-700", className: "bg-slate-700" },
+        { name: "출고", offset: 15, colorClass: "bg-emerald-500", className: "bg-emerald-500" },
+        { name: "생산", offset: 25, colorClass: "bg-emerald-500", className: "bg-emerald-500" },
+        { name: "SW 배포", offset: 30, colorClass: "bg-orange-500", className: "bg-orange-500" },
+        { name: "SUMS 등록", offset: 31, colorClass: "bg-orange-500", className: "bg-orange-500" },
+        { name: "시스템 및 OTA 검증", offset: 32, colorClass: "bg-orange-500", className: "bg-orange-500" },
+        { name: "SW 설계 완료 및 BOM 전산 등록", offset: 60, colorClass: "bg-orange-500", className: "bg-orange-500" },
+        { name: "승인도 접수", offset: 70, colorClass: "bg-orange-500", className: "bg-orange-500" },
+        { name: "사양 검토 완료 및 설계변경 통보서 전산 등록", offset: 80, colorClass: "bg-rose-500", className: "bg-rose-500" },
+        { name: "도면의뢰", offset: 85, colorClass: "bg-rose-500", className: "bg-rose-500" },
+        { name: "사양 접수", offset: 90, colorClass: "bg-rose-500", className: "bg-rose-500" }
+      ];
+
+      scheduleResults = milestones.map(m => {
+        const dt = offsetDate(base, m.offset);
+        return {
+          ...m,
+          dDayLabel: m.offset === 0 ? "D-Day" : `SOP -${m.offset}일`,
+          dateStr: formatDate(dt),
+          rawDate: dt.toISOString().slice(0,10),
+          label: `${m.offset === 0 ? "D-Day" : `SOP -${m.offset}일`} · ${m.name}`
+        };
+      });
+
+      scheduleHighlightMap = {};
+      scheduleResults.forEach(item => {
+        scheduleHighlightMap[item.rawDate] = { label: item.label, className: item.className };
+      });
+
+      renderScheduleList();
+      renderMiniCalendar();
+      renderMonthlyCalendar();
+    });
+
+    renderMiniCalendar();
+    renderMonthlyCalendar();
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width, height = canvas.height;
+    const lanes = [width * 0.22, width * 0.5, width * 0.78];
+    const player = { w: 42, h: 74, y: height - 90 };
+    let animationId = null, running = true, gameOver = false, score = 0, difficulty = 1, playerLane = 1, obstacles = [], lastSpawn = 0, lastTime = 0;
+
+    function updateScore(){
+      scorePill.textContent = `점수 ${score}`;
+      restartBtn.textContent = gameOver ? "다시 시작" : "새로 시작";
+    }
+    function resetGame(){
+      obstacles = []; playerLane = 1; score = 0; difficulty = 1; lastSpawn = 0; lastTime = 0; gameOver = false; running = true;
+      updateScore();
+      cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(loop);
+    }
+    function movePlayer(dir){
+      if(gameOver) return;
+      playerLane = Math.max(0, Math.min(2, playerLane + dir));
+    }
+    leftBtn.onclick = () => movePlayer(-1);
+    rightBtn.onclick = () => movePlayer(1);
+    restartBtn.onclick = resetGame;
+    window.addEventListener("keydown", e => {
+      if(e.key === "ArrowLeft") movePlayer(-1);
+      if(e.key === "ArrowRight") movePlayer(1);
+      if(e.key.toLowerCase() === "r" && gameOver) resetGame();
+    });
+
+    function drawRoundedRect(x,y,w,h,r,fill){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
+      ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+    }
+    function drawRoad(){
+      ctx.clearRect(0,0,width,height);
+      const grad = ctx.createLinearGradient(0,0,0,height);
+      grad.addColorStop(0, "#3f3f46"); grad.addColorStop(1, "#18181b");
+      drawRoundedRect(20,0,width-40,height,24,grad);
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(20,0,4,height); ctx.fillRect(width-24,0,4,height);
+      ctx.setLineDash([18,16]); ctx.strokeStyle = "rgba(255,255,255,0.38)"; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(width/3 + 7, 0); ctx.lineTo(width/3 + 7, height);
+      ctx.moveTo((width/3)*2 - 7, 0); ctx.lineTo((width/3)*2 - 7, height);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    function drawCar(centerX, y, color, enemy=false){
+      const x = centerX - player.w/2;
+      drawRoundedRect(x+8, y, player.w-16, 18, 8, color);
+      drawRoundedRect(x, y+12, player.w, player.h-18, 10, color);
+      drawRoundedRect(x+7, y+8, 11, 9, 3, "rgba(255,255,255,0.85)");
+      drawRoundedRect(x+player.w-18, y+8, 11, 9, 3, "rgba(255,255,255,0.85)");
+      ctx.fillStyle = "#111827";
+      ctx.beginPath();
+      ctx.arc(x+8, y+player.h-4, 6, 0, Math.PI*2);
+      ctx.arc(x+player.w-8, y+player.h-4, 6, 0, Math.PI*2);
+      ctx.fill();
+      if(enemy){
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        ctx.fillRect(x+4, y+player.h+6, player.w-8, 4);
+      }
+    }
+    function loop(ts){
+      if(!running) return;
+      if(!lastTime) lastTime = ts;
+      const delta = ts - lastTime; lastTime = ts;
+      const spawnGap = Math.max(420, 950 - difficulty * 55);
+      if(!lastSpawn || ts - lastSpawn > spawnGap){
+        obstacles.push({ lane: Math.floor(Math.random()*3), y: -90, speed: 2.6 + difficulty * 0.33 });
+        lastSpawn = ts;
+      }
+      obstacles = obstacles.map(obs => ({...obs, y: obs.y + obs.speed + delta * 0.0025})).filter(obs => {
+        if(obs.y > height + 120){ score += 1; difficulty = 1 + Math.floor(score / 5) * 0.28; updateScore(); return false; }
+        return true;
+      });
+      drawRoad();
+      obstacles.forEach(obs => drawCar(lanes[obs.lane], obs.y, "#fb7185", true));
+      const playerX = lanes[playerLane];
+      drawCar(playerX, player.y, "#60a5fa", false);
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText(`SCORE ${score}`, 30, 28);
+      ctx.fillText(`LEVEL ${Math.floor(difficulty*10)/10}`, 200, 28);
+      const p = { left: playerX-player.w/2+2, right: playerX+player.w/2-2, top: player.y+6, bottom: player.y+player.h-2 };
+      const collided = obstacles.some(obs => {
+        const ox = lanes[obs.lane];
+        const r = { left: ox-player.w/2+2, right: ox+player.w/2-2, top: obs.y+6, bottom: obs.y+player.h-2 };
+        return !(p.right < r.left || p.left > r.right || p.bottom < r.top || p.top > r.bottom);
+      });
+      if(collided){
+        gameOver = true; running = false; updateScore();
+        drawRoundedRect(48,140,width-96,120,24,"rgba(15,23,42,0.78)");
+        ctx.fillStyle = "#fff"; ctx.font = "bold 24px sans-serif"; ctx.fillText("GAME OVER", 90, 185);
+        ctx.font = "14px sans-serif"; ctx.fillText("R 키 또는 아래 버튼으로 다시 시작", 70, 220);
+        return;
+      }
+      animationId = requestAnimationFrame(loop);
+    }
+    updateScore();
+    animationId = requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
